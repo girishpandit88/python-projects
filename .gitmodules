@@ -1,0 +1,3 @@
+[submodule "python-flask-app"]
+	path = python-flask-app
+	url = git@github.com:girishpandit88/python-flask-app.git
