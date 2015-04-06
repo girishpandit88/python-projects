@@ -3,8 +3,10 @@
 
 from flask import Flask, jsonify, request
 from time import gmtime, strftime
-import json
+from boto.dynamodb2.layer1 import DynamoDBConnection
 from ConfigParser import SafeConfigParser
+
+import json
 import base64
 import urllib2
 import requests
@@ -13,6 +15,13 @@ app = Flask(__name__)
 moduleLoadTime=strftime("%Y-%m-%d %H:%M:%S", gmtime())
 iOSProdUrl=''
 iOSSandboxURL=''
+
+connection = DynamoDBConnection(
+    aws_access_key_id='foo',         # Dummy access key
+    aws_secret_access_key='bar',     # Dummy secret key
+    host='localhost',                # Host where DynamoDB Local resides
+    port=8000,                       # DynamoDB Local port (8000 is the default)
+    is_secure=False)                 # Disable secure connections
 
 def loadConfig():
 	parser = SafeConfigParser()
@@ -53,6 +62,7 @@ def validateSandbox7Receipt(data,transactionId):
 		for inAppReceipt in inAppReceipts:
 			if transactionId == inAppReceipt['original_transaction_id']:
 				responseJSON = prepareResponse(response)
+
 				break
 			else:
 				responseJSON = prepareResponse(None)
