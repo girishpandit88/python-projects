@@ -19,8 +19,6 @@ def loadConfig():
 	parser.read('validationConfig')
 	app.config['iOSProdUrl'] = parser.get('validationConfig', 'iOSProductionUrl')
 	app.config['iOSSandboxUrl'] = parser.get('validationConfig', 'iOSSandboxUrl')
-	print "iOSProdUrl: "+iOSProdUrl
-	print "iOSSandboxUrl: "+iOSSandboxURL
 
 @app.route("/mtx/recordTransaction", methods=['POST'])
 def recordTransaction():
@@ -40,7 +38,6 @@ def validateIOS7Receipt(receipt, transcationId):
 	loadConfig()
 	if "1-" in transcationId:
 		transcationId=transcationId[2:]
-	print transcationId
 	jsonData = json.dumps({'receipt-data': receipt})
 	response = requests.post(app.config['iOSProdUrl'], data=jsonData).json()
 	if response['status']==21007:
@@ -77,5 +74,4 @@ def sysstat():
 	return response		
 
 if __name__ == "__main__":
-	# loadConfig()
-    app.run(debug=True)
+    app.run()
