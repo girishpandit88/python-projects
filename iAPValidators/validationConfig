@@ -1,0 +1,3 @@
+[validationConfig]
+iOSProductionUrl=https://buy.itunes.apple.com/verifyReceipt
+iOSSandboxUrl=https://sandbox.itunes.apple.com/verifyReceipt
