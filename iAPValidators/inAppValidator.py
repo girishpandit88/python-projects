@@ -1,31 +1,28 @@
-#inAppValidator
+#inAppValidator.py
 # @Author: Girish A Pandit
 
 from flask import Flask, jsonify, request
 from time import gmtime, strftime
-import json
+from boto.dynamodb2.layer1 import DynamoDBConnection
 from ConfigParser import SafeConfigParser
+from validators import iOSValidator
+from storetransactions import storeTransactions
+
+import json
 import base64
 import urllib2
 import requests
 
 app = Flask(__name__)
-moduleLoadTime=strftime("%Y-%m-%d %H:%M:%S", gmtime())
-iOSProdUrl=''
-iOSSandboxURL=''
-
-def loadConfig():
-	parser = SafeConfigParser()
-	parser.read('validationConfig')
-	app.config['iOSProdUrl'] = parser.get('validationConfig', 'iOSProductionUrl')
-	app.config['iOSSandboxUrl'] = parser.get('validationConfig', 'iOSSandboxUrl')
-
-@app.route("/mtx/recordTransaction", methods=['POST'])
+iOSValidator = iOSValidator()
+transactionMgr = storeTransactions()
+@app.route("/mtx/transactions/verify", methods=['POST'])
 def recordTransaction():
 	data = request.data
 	dataDict = json.loads(data)
 	if dataDict['platform'] in "iOS":
-		return validateIOS7Receipt(dataDict['receipt'],dataDict['transactionId'])
+		response =  iOSValidator.validateIOS7Receipt(dataDict['receipt'],dataDict['transactionId'])
+		return response
 	else:
 		response = jsonify(message="Platform currently not supported")
 		response.status_code=200
@@ -34,39 +31,6 @@ def recordTransaction():
 	response.status_code=200
 	return response
 
-def validateIOS7Receipt(receipt, transcationId):
-	loadConfig()
-	if "1-" in transcationId:
-		transcationId=transcationId[2:]
-	jsonData = json.dumps({'receipt-data': receipt})
-	response = requests.post(app.config['iOSProdUrl'], data=jsonData).json()
-	if response['status']==21007:
-		return validateSandbox7Receipt(jsonData,transcationId)
-	responseJSON = jsonify(status=response['status'])
-	return responseJSON
-
-def validateSandbox7Receipt(data,transactionId):
-	response = requests.post(app.config['iOSSandboxUrl'], data=data).json()
-	inAppReceipts = response['receipt']['in_app']
-	print "Len:"+str(len(inAppReceipts))
-	if response['status']==0:
-		for inAppReceipt in inAppReceipts:
-			if transactionId == inAppReceipt['original_transaction_id']:
-				responseJSON = prepareResponse(response)
-				break
-			else:
-				responseJSON = prepareResponse(None)
-	return responseJSON
-
-def prepareResponse(res):
-	if res is None:
-		responseJSON = jsonify(status='-10001',message='Could not verify receipt')
-		responseJSON.status_code = 404
-		return responseJSON
-	responseJSON = jsonify(status=res['status'], receiptType=res['environment'])
-	responseJSON.status_code = 200
-	return responseJSON
-
 @app.route("/sysstat")
 def sysstat():
 	response= jsonify(loadTime=moduleLoadTime)
@@ -74,4 +38,4 @@ def sysstat():
 	return response		
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
