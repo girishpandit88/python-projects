@@ -22,12 +22,6 @@ def recordTransaction():
 	dataDict = json.loads(data)
 	if dataDict['platform'] in "iOS":
 		response =  iOSValidator.validateIOS7Receipt(dataDict['receipt'],dataDict['transactionId'])
-		with open('tmp.csv','rw') as f:
-			t= (dataDict['receipt'],dataDict['transactionId'],dataDict['price'],strftime("%Y-%m-%d %H:%M:%S", gmtime()))
-			f.write(" ".join(t))
-			f.seek(0)
-			print 'Key:'+str(transactionMgr.storeToS3(f))
-			f.close()
 		return response
 	else:
 		response = jsonify(message="Platform currently not supported")
